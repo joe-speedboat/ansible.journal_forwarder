@@ -1,125 +1,49 @@
-# BITBULL ANSIBLE ROLE TEMPLATE
+# Ansible Role: joe-speedboat.journal_forwarder
 
-## WHY
-When Red Hat officially started supporting Ansible, I had a lot of fun immersing myself    
-in this really new concept of automation and keeping my knowledge up to date.   
+This role installs and configures fluent-bit to forward systemd journal logs to Graylog via GELF input. Unlike traditional syslog forwarding, this approach preserves journal keys (structured metadata) such as _HOSTNAME, _SYSTEMD_UNIT, PRIORITY, and MESSAGE fields.
 
-A must for every efficient Linux consultant!   
+## Requirements
 
-Just like GitHub repos, which at the beginning was the desired solution to a long worn problem,    
-with its excessive use it quickly became clear that management and maintenance are the    
-factors that determine the expense of these resources you have to spend in the future.   
+* Ansible 2.9 or higher
+* systemd-based Linux distribution (Rocky, AlmaLinux, RHEL, Ubuntu, Debian)
+* Graylog server with GELF input enabled (default: port 12201/tcp)
 
-I have always been of the opinion that what cannot be maintained in Operations has been developed incorrectly.     
-And I am constantly trying to do justice to this.    
+## Role Variables
 
-For this purpose I have developed an Ansible role template, which is mandatory:    
-* Clear
-* Unambiguous
-* Dynamic   
+Variables are defined in `defaults/main.yml`:
 
-which in turn reduces:    
-* Error
-* Familiarization
-* Maintenance
+| Variable | Default | Description |
+|---|---|---|
+| `journal_forwarder_install` | `True` | Toggle installation on/off |
+| `graylog_gelf_host` | `graylog1.sun.bitbull.ch` | Graylog GELF input host |
+| `graylog_gelf_port` | `12201` | Graylog GELF input port |
+| `graylog_gelf_mode` | `tcp` | Transport mode (tcp/udp) |
+| `graylog_fluent_bit_workers` | `2` | Number of fluent-bit workers |
 
-This template concept, which I searched on the internet and did not find is foremost compatible with the current version of AWX.    
-(upstream project for Ansible Tower)
+## Example Playbook
 
-## HOW IT WORKS
-* Create a deduplicated list of task files
-* Reorder them by numbers
-* Run tasks by first match with the ansible_facts of the target machine (```include-file.yml```)
-  * ```{{  ansible_distribution_custom }}-{{ ansible_distribution_version }}```
-    * rhelAll-8.4
-  * ```{{ ansible_distribution_custom }}-{{ ansible_distribution_major_version }}```
-    * rhelAll-8
-  * ```{{ ansible_distribution_custom }}```
-    * rhelAll
-  * ```{{ ansible_distribution }}-{{ ansible_distribution_version }}```
-    * Rocky-8.4
-    * Ubuntu-24.04
-  * ```{{ ansible_distribution }}-{{ ansible_distribution_major_version }}```
-    * AlmaLinux-8
-    * Ubuntu-20
-  * ```{{ ansible_distribution }}```
-    * Rocky
-    * Ubuntu
-  * ```{{ ansible_os_family }}```
-    * RedHat
-    * Debian
-  * ```shared```
-    * This is the fallback, if noting above matches
-
-* Note, since RockyLinux and AlmaLinux are RHEL clones that work almost similar, we needed just one os folder for both
-  * If you need tasks that work for Alma and Rocky, create a folder named ```rhelAll``` in ```tasks``` folder
-    * It get catched like the var ```{{ ansible_distribution }}``` above
-
-You can look ito the role directory, it will be clear why and how to use it.   
-
-To get an overview, just look up the file names:
-```
-$ find tasks -type f -name '*.yml' #modified view
-
-tasks/shared/01_run_on_all_systems.yml
-
-tasks/Rocky-7/10_prep.yml
-tasks/shared/10_prep.yml
-
-tasks/Rocky-8/20_setup.yml
-tasks/shared/20_setup.yml
-
-tasks/Rocky-8/30_post.yml
-tasks/shared/30_post.yml
+```yaml
+- hosts: all
+  vars:
+    graylog_gelf_host: "graylog.example.com"
+  roles:
+    - joe-speedboat.journal_forwarder
 ```
 
-## Drawback of this solution
-Including of task-files, depending on given ansible-facts, has to get created in blocks statements within the task files itself.
+## Installation
 
-## One final word
-Many thanks to all supporters of OpenSource products,    
-only by sharing our solutions we could get this far!   
-If you use this construct for your productive work,    
-we would appreciate a donation to the [Stifung Buehl](https://www.stiftung-buehl.ch/ueber-uns/spenden).   
-All our know-how is OpenSource and your donation enables    
-children and young people with special needs to find a place in life.   
-
-Chris Ruettimann <chris@bitbull.ch>
-
-# <ROLENAME>
-
-Installation with ansible-galaxy:
-
-``` bash
-ansible-galaxy install joe-speedboat.template
+### From Galaxy
+```bash
+ansible-galaxy install joe-speedboat.journal_forwarder
 ```
 
-## Requirements xxx
+### From Git
+```bash
+git clone https://github.com/joe-speedboat/ansible.journal_forwarder
+ansible-galaxy install -r requirements.yml
+```
 
-* Currently tested with Rocky 9 
-* Ansible 2.9 or higher is required for this Ansible Role
+## License
 
-* Operating System: Rocky 9
-* OS Disk: min 00 GB
-* Data Disk: min 00 GB
-* CPU: min 00   
-* Memory: min 00 GB   
-
-
-
-Role Variables
---------------
-
-Variables are speaking or documented in defaults/main.yml   
-One variable is mandatory: var1xxx
-
-
-## Dependencies
-
-This Ansilbe Role has no dependencies to other Ansilbe Roles
-
-License
--------
-https://opensource.org/licenses/GPL-3.0    
+GPLv3
 Copyright (c) Chris Ruettimann <chris@bitbull.ch>
-

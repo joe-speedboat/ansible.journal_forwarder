@@ -1,9 +1,10 @@
-#!/usr/bin/ansible-playbook 
+#!/usr/bin/ansible-playbook
 ---
-- name: joe-speedboat.template Setup
+- name: Test journal_forwarder role
   hosts: localhost
+  connection: local
   vars:
-    mandatory_var: mandatory-value
+    graylog_gelf_host: "127.0.0.1"
   roles:
-    - joe-speedboat.template
+    - joe-speedboat.journal_forwarder
 ...

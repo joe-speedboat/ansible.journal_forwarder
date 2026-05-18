@@ -1,3 +1,9 @@
 ---
-- debug: msg="This is an example task file for tasks/shared/30_post.yml"
+- name: Enable and start fluent-bit service
+  systemd:
+    name: fluent-bit
+    state: started
+    enabled: True
+  when: journal_forwarder_install | bool
+
 ...
