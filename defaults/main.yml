@@ -1,8 +1,17 @@
 # defaults/main.yml
 ---
-# Here belong all variables, that can be changed by a vars-file,
-# a playbook or a include.
+# Toggle installation
+journal_forwarder_install: True
 
-mandatory_default_var1xxx: playbook-will-fail-without-this-var
-default_var2_xxx: this_is_defined_in_defaults_folder
+# Graylog GELF input settings
+graylog_gelf_host: "graylog1.sun.bitbull.ch"
+graylog_gelf_port: 12201
+graylog_gelf_mode: "tcp"
+
+# Fluent-bit workers
+graylog_fluent_bit_workers: 2
+
+# Journal forwarder tag for GELF
+journal_forwarder_tag: "fb_tag"
+
 ...

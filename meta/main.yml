@@ -1,20 +1,33 @@
-# meta/main.yml
 ---
-# Change as needed
 galaxy_info:
   author: Chris Ruettimann
-  role_name: template
-#  namespace: joe-speedboat
-  description: Bitbull Template Ansible Role
-  min_ansible_version: 2.9
+  role_name: journal_forwarder
+  namespace: joe-speedboat
+  description: Ansible role to forward systemd journal logs to Graylog via GELF using fluent-bit
   license: GPLv3
-  platforms:
-  - name: EL
-    versions:
-    - 7
-    - 8
-  galaxy_tags: []
+  min_ansible_version: 2.9
 
-# We don't use dependencies in here anymore
+  platforms:
+    - name: EL
+      versions:
+        - 8
+        - 9
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+
+  galaxy_tags:
+    - logging
+    - syslog
+    - graylog
+    - gelf
+    - fluent-bit
+    - journald
+
 dependencies: []
-...

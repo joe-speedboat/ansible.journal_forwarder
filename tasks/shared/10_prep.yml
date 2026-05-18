@@ -1,3 +1,10 @@
 ---
-- debug: msg="This is an example task file for tasks/shared/10_prep.yml"
+- name: Validate mandatory variables
+  assert:
+    that:
+      - graylog_gelf_host is defined
+      - graylog_gelf_port is defined
+    fail_msg: "Mandatory variables graylog_gelf_host and graylog_gelf_port must be defined"
+  when: journal_forwarder_install | bool
+
 ...

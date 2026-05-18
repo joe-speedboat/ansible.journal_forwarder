@@ -1,3 +1,20 @@
 ---
-- debug: msg="This is an example task file for tasks/shared/20_setup.yml"
+- name: Install fluent-bit packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ pkg_rhel_fluent_bit | default(pkg_fluent_bit, true) }}"
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Deploy fluent-bit configuration
+  copy:
+    src: fluent-bit.conf.j2
+    dest: /etc/fluent-bit/fluent-bit.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
 ...
