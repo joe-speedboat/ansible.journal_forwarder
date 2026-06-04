@@ -1,8 +1,12 @@
 # handlers/main.yml
 ---
 - name: restart fluent-bit
-  systemd:
+  ansible.builtin.systemd:
     name: fluent-bit
     state: restarted
+
+- name: reload audit rules
+  ansible.builtin.command: augenrules --load
+  changed_when: true
 
 ...
