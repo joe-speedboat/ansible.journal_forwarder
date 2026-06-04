@@ -1,20 +1,75 @@
 ---
 - name: Install fluent-bit packages
   ansible.builtin.package:
-    name: "{{ item }}"
+    name: "{{ pkg_rhel_fluent_bit | default(pkg_fluent_bit, true) }}"
     state: present
-  loop: "{{ pkg_rhel_fluent_bit | default(pkg_fluent_bit, true) }}"
   notify: restart fluent-bit
   when: journal_forwarder_install | bool
 
-- name: Deploy fluent-bit configuration
-  copy:
+- name: Install audit packages
+  ansible.builtin.package:
+    name: "{{ pkg_rhel_journal_forwarder_audit }}"
+    state: present
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+    - ansible_os_family == 'RedHat'
+
+- name: Ensure Fluent Bit storage directory exists
+  ansible.builtin.file:
+    path: "{{ journal_forwarder_storage_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: journal_forwarder_install | bool
+
+- name: Deploy Fluent Bit parser configuration
+  ansible.builtin.template:
+    src: parsers-journal-forwarder.conf.j2
+    dest: /etc/fluent-bit/parsers-journal-forwarder.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Deploy Fluent Bit configuration
+  ansible.builtin.template:
     src: fluent-bit.conf.j2
     dest: /etc/fluent-bit/fluent-bit.conf
     owner: root
     group: root
     mode: '0644'
   notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Deploy audit package-change rules
+  ansible.builtin.copy:
+    src: audit-package.rules
+    dest: "{{ journal_forwarder_audit_rules_file }}"
+    owner: root
+    group: root
+    mode: '0640'
+  notify: reload audit rules
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+- name: Enable and start auditd
+  ansible.builtin.systemd:
+    name: auditd
+    enabled: true
+    state: started
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+- name: Enable and start fluent-bit
+  ansible.builtin.systemd:
+    name: fluent-bit
+    enabled: true
+    state: started
   when: journal_forwarder_install | bool
 
 ...

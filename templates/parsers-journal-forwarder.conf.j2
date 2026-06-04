@@ -1,0 +1,16 @@
+[PARSER]
+    Name        audit_raw
+    Format      regex
+    Regex       ^type=(?<type>[^ ]+) msg=audit\((?<timestamp>[^)]+)\): (?<message>.*)$
+    Time_Key    timestamp
+    Time_Format %s.%L
+
+[PARSER]
+    Name   audit_msg
+    Format regex
+    Regex  msg='(?<msg>[^']+)'
+
+[PARSER]
+    Name   audit_fields
+    Format regex
+    Regex  op=(?<op>[^ ]+) .*sw="(?<sw>[^"]+)" .*comm="(?<comm>[^"]+)" .*exe="(?<exe>[^"]+)" .*res=(?<res>[^ ]+)

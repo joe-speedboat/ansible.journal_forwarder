@@ -1,17 +1,26 @@
 # defaults/main.yml
 ---
 # Toggle installation
-journal_forwarder_install: True
+journal_forwarder_install: true
 
 # Graylog GELF input settings
 graylog_gelf_host: "graylog1.sun.bitbull.ch"
 graylog_gelf_port: 12201
 graylog_gelf_mode: "tcp"
 
-# Fluent-bit workers
+# Fluent Bit runtime settings
 graylog_fluent_bit_workers: 2
+journal_forwarder_tag: "journald"
+journal_forwarder_read_from_tail: true
+journal_forwarder_storage_path: /var/lib/fluent-bit
+journal_forwarder_systemd_db: "{{ journal_forwarder_storage_path }}/flb_systemd.db"
 
-# Journal forwarder tag for GELF
-journal_forwarder_tag: "fb_tag"
+# Audit log forwarding.
+# When enabled, auditd is installed/started, package-manager execution audit
+# rules are deployed, and /var/log/audit/audit.log is tailed by Fluent Bit.
+journal_forwarder_audit_enabled: true
+journal_forwarder_audit_tag: "audit"
+journal_forwarder_audit_db: "{{ journal_forwarder_storage_path }}/flb_audit.db"
+journal_forwarder_audit_rules_file: /etc/audit/rules.d/package.rules
 
 ...

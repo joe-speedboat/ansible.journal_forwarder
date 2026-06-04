@@ -1,0 +1,7 @@
+# RPM / DNF / YUM
+-w /usr/bin/rpm -p x -k package_change
+-w /usr/bin/dnf -p x -k package_change
+-w /usr/bin/yum -p x -k package_change
+
+# Libraries used by package-manager tooling on RHEL-compatible systems
+-w /usr/libexec/platform-python -p x -k package_change
