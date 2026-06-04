@@ -8,7 +8,7 @@ The role can also forward auditd package-change events from `/var/log/audit/audi
 
 * Ansible 2.9 or higher
 * systemd-based Linux distribution
-* RHEL-compatible target with EPEL available for the `fluent-bit` package
+* RHEL-compatible target with EPEL available for the `fluent-bit` package; tested on Rocky Linux 10
 * Graylog server with GELF input enabled, by default port `12201/tcp`
 
 ## Role Variables

@@ -2,7 +2,7 @@
 # Packages by OS family
 pkg_rhel_fluent_bit:
   - fluent-bit
-  - libsystemd
+  - systemd-libs
 
 pkg_rhel_journal_forwarder_repositories:
   - epel-release
