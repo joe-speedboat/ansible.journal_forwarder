@@ -1,8 +1,14 @@
 ---
 # Packages by OS family
+pkg_fluent_bit:
+  - fluent-bit
+
 pkg_rhel_fluent_bit:
   - fluent-bit
-  - libsystemd
+  - systemd-libs
+
+pkg_debian_fluent_bit:
+  - fluent-bit
 
 pkg_rhel_journal_forwarder_repositories:
   - epel-release
@@ -10,7 +16,22 @@ pkg_rhel_journal_forwarder_repositories:
 pkg_rhel_journal_forwarder_audit:
   - audit
 
-svc_fluent_bit:
-  - fluent-bit
+pkg_debian_journal_forwarder_audit:
+  - auditd
+
+pkg_debian_repository_dependencies:
+  - ca-certificates
+  - curl
+  - gpg
+
+svc_fluent_bit: fluent-bit
+svc_audit:
+  RedHat: auditd
+  Debian: auditd
+
+fluent_bit_rpm_repo_family_map:
+  Rocky: rockylinux
+  AlmaLinux: almalinux
+  RedHat: rockylinux
 
 ...
