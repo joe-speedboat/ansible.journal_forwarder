@@ -1,9 +1,0 @@
----
-- name: Enable and start fluent-bit service
-  ansible.builtin.systemd:
-    name: "{{ svc_fluent_bit }}"
-    state: started
-    enabled: true
-  when: journal_forwarder_install | bool
-
-...

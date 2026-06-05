@@ -1,0 +1,25 @@
+---
+- name: Install Fluent Bit on RHEL-compatible systems
+  ansible.builtin.shell: |
+    set -o pipefail
+    rpm -q fluent-bit >/dev/null 2>&1 || dnf -y install {{ pkg_rhel_fluent_bit | join(' ') }}
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_rhel_fluent_bit_install
+  changed_when: "'Nothing to do.' not in journal_forwarder_rhel_fluent_bit_install.stdout and journal_forwarder_rhel_fluent_bit_install.rc == 0 and journal_forwarder_rhel_fluent_bit_install.stdout | length > 0"
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Install audit packages on RHEL-compatible systems
+  ansible.builtin.shell: |
+    set -o pipefail
+    rpm -q {{ pkg_rhel_journal_forwarder_audit | join(' ') }} >/dev/null 2>&1 || dnf -y install {{ pkg_rhel_journal_forwarder_audit | join(' ') }}
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_rhel_audit_install
+  changed_when: "journal_forwarder_rhel_audit_install.stdout | length > 0"
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+...

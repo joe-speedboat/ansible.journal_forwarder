@@ -1,0 +1,12 @@
+---
+- name: Validate mandatory variables
+  ansible.builtin.assert:
+    that:
+      - graylog_gelf_host is defined
+      - graylog_gelf_host | length > 0
+      - graylog_gelf_port is defined
+      - graylog_gelf_mode in ['tcp', 'udp']
+    fail_msg: "Mandatory variables graylog_gelf_host, graylog_gelf_port and graylog_gelf_mode must be valid"
+  when: journal_forwarder_install | bool
+
+...

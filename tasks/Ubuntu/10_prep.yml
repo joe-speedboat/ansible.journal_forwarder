@@ -1,0 +1,43 @@
+---
+- name: Install Ubuntu repository dependencies for Fluent Bit
+  ansible.builtin.command: apt-get update
+  changed_when: false
+  when: journal_forwarder_install | bool
+
+- name: Install Ubuntu repository helper packages for Fluent Bit
+  ansible.builtin.command: >-
+    apt-get install -y {{ pkg_debian_repository_dependencies | join(' ') }}
+  register: journal_forwarder_ubuntu_repo_deps
+  changed_when: "'0 upgraded, 0 newly installed' not in journal_forwarder_ubuntu_repo_deps.stdout"
+  when: journal_forwarder_install | bool
+
+- name: Install Fluent Bit apt repository key
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://packages.fluentbit.io/fluentbit.key | gpg --dearmor > /usr/share/keyrings/fluentbit-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /usr/share/keyrings/fluentbit-keyring.gpg
+  when: journal_forwarder_install | bool
+
+- name: Configure Fluent Bit apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/fluent-bit.list
+    owner: root
+    group: root
+    mode: '0644'
+    content: >-
+      deb [signed-by=/usr/share/keyrings/fluentbit-keyring.gpg]
+      https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }}
+      {{ ansible_distribution_release }} main
+  register: journal_forwarder_apt_repo
+  when: journal_forwarder_install | bool
+
+- name: Update apt cache after Fluent Bit repository change
+  ansible.builtin.command: apt-get update
+  changed_when: false
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_apt_repo is changed
+
+...
