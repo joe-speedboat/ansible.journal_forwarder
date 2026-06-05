@@ -1,0 +1,18 @@
+{% if ansible_os_family == 'RedHat' %}
+# RPM / DNF / YUM
+-w /usr/bin/rpm -p x -k package_change
+-w /usr/bin/dnf -p x -k package_change
+-w /usr/bin/yum -p x -k package_change
+
+# Libraries used by package-manager tooling on RHEL-compatible systems
+-w /usr/libexec/platform-python -p x -k package_change
+{% elif ansible_os_family == 'Debian' %}
+# DPKG / APT
+-w /usr/bin/dpkg -p x -k package_change
+-w /usr/bin/apt -p x -k package_change
+-w /usr/bin/apt-get -p x -k package_change
+-w /usr/bin/apt-cache -p x -k package_change
+
+# Libraries used by package-manager tooling on Debian-compatible systems
+-w /usr/bin/python3 -p x -k package_change
+{% endif %}

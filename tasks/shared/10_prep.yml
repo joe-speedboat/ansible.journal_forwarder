@@ -1,12 +1,4 @@
 ---
-- name: Install repository packages for journal_forwarder
-  ansible.builtin.package:
-    name: "{{ pkg_rhel_journal_forwarder_repositories }}"
-    state: present
-  when:
-    - journal_forwarder_install | bool
-    - ansible_os_family == 'RedHat'
-
 - name: Validate mandatory variables
   ansible.builtin.assert:
     that:
@@ -16,5 +8,74 @@
       - graylog_gelf_mode in ['tcp', 'udp']
     fail_msg: "Mandatory variables graylog_gelf_host, graylog_gelf_port and graylog_gelf_mode must be valid"
   when: journal_forwarder_install | bool
+
+- name: Install Debian repository dependencies for Fluent Bit
+  ansible.builtin.command: >-
+    apt-get update
+  changed_when: false
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'Debian'
+
+- name: Install Debian repository helper packages for Fluent Bit
+  ansible.builtin.command: >-
+    apt-get install -y {{ pkg_debian_repository_dependencies | join(' ') }}
+  register: journal_forwarder_debian_repo_deps
+  changed_when: "'0 upgraded, 0 newly installed' not in journal_forwarder_debian_repo_deps.stdout"
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'Debian'
+
+- name: Install Fluent Bit apt repository key
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://packages.fluentbit.io/fluentbit.key | gpg --dearmor > /usr/share/keyrings/fluentbit-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /usr/share/keyrings/fluentbit-keyring.gpg
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'Debian'
+
+- name: Configure Fluent Bit apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/fluent-bit.list
+    owner: root
+    group: root
+    mode: '0644'
+    content: >-
+      deb [signed-by=/usr/share/keyrings/fluentbit-keyring.gpg]
+      https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }}
+      {{ ansible_distribution_release }} main
+  register: journal_forwarder_apt_repo
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'Debian'
+
+- name: Update apt cache after Fluent Bit repository change
+  ansible.builtin.command: apt-get update
+  changed_when: false
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'Debian'
+    - journal_forwarder_apt_repo is changed
+
+- name: Configure Fluent Bit yum repository
+  ansible.builtin.copy:
+    dest: /etc/yum.repos.d/fluent-bit.repo
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [fluent-bit]
+      name=Fluent Bit
+      baseurl=https://packages.fluentbit.io/{{ fluent_bit_rpm_repo_family_map[ansible_distribution] | default('rockylinux') }}/{{ ansible_distribution_major_version }}/
+      gpgcheck=1
+      gpgkey=https://packages.fluentbit.io/fluentbit.key
+      repo_gpgcheck=1
+      enabled=1
+  when:
+    - journal_forwarder_install | bool
+    - ansible_os_family == 'RedHat'
 
 ...

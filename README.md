@@ -8,7 +8,13 @@ The role can also forward auditd package-change events from `/var/log/audit/audi
 
 * Ansible 2.9 or higher
 * systemd-based Linux distribution
-* RHEL-compatible target with EPEL available for the `fluent-bit` package; tested on Rocky Linux 10
+* Supported/tested targets:
+  * Ubuntu 24.04 LTS
+  * Ubuntu 26.04 LTS
+  * Rocky Linux 8.10
+  * Rocky Linux 9.7
+  * Rocky Linux 10.1
+* Network access from the target to `https://packages.fluentbit.io/` so the role can configure the official Fluent Bit package repository
 * Graylog server with GELF input enabled, by default port `12201/tcp`
 
 ## Role Variables
@@ -26,6 +32,18 @@ Variables are defined in `defaults/main.yml`.
 - `journal_forwarder_audit_enabled`: `true` — Enable auditd package-change forwarding.
 - `journal_forwarder_audit_tag`: `audit` — Tag for audit log input.
 - `journal_forwarder_audit_rules_file`: `/etc/audit/rules.d/package.rules` — Audit rules destination.
+
+## Package Repositories
+
+The role configures the official Fluent Bit repository for the target OS:
+
+- Ubuntu: `https://packages.fluentbit.io/ubuntu/<codename>` with the Fluent Bit key in `/usr/share/keyrings/fluentbit-keyring.gpg`
+- Rocky/RHEL-compatible systems: `https://packages.fluentbit.io/rockylinux/<major-version>/`
+
+Audit package-change rules are rendered per OS family:
+
+- Rocky/RHEL-compatible systems watch `rpm`, `dnf`, `yum`, and `/usr/libexec/platform-python`
+- Ubuntu/Debian-compatible systems watch `dpkg`, `apt`, `apt-get`, `apt-cache`, and `/usr/bin/python3`
 
 ## Example Playbook
 
