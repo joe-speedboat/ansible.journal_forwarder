@@ -31,24 +31,59 @@
     Skip_Long_Lines   On
 
 [FILTER]
-    Name    parser
-    Match   {{ journal_forwarder_audit_tag }}
-    Key_Name message
-    Parser  audit_msg
-    Reserve_Data True
+    Name          parser
+    Match         {{ journal_forwarder_audit_tag }}
+    Key_Name      message
+    Parser        audit_msg
+    Reserve_Data  On
+    Preserve_Key  On
 
 [FILTER]
-    Name    parser
-    Match   {{ journal_forwarder_audit_tag }}
-    Key_Name msg
-    Parser  audit_fields
-    Reserve_Data True
+    Name          parser
+    Match         {{ journal_forwarder_audit_tag }}
+    Key_Name      audit_msg
+    Parser        audit_package_fields
+    Reserve_Data  On
+    Preserve_Key  On
 
 [FILTER]
     Name    modify
     Match   {{ journal_forwarder_audit_tag }}
     Set     log_type auditd
+    Add     hostname {{ ansible_hostname }}
 {% endif %}
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
+    Parser        auth_sshd_accepted
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
+    Parser        auth_sshd_failed
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
+    Parser        auth_pam_session
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
+    Parser        auth_sudo_command
+    Reserve_Data  On
+    Preserve_Key  On
 
 [FILTER]
     Name    modify
@@ -58,7 +93,7 @@
 [FILTER]
     Name    modify
     Match   *
-    Add     message journal_forwarder
+    Add     journal_forwarder true
     Copy    tag fb_tag
 
 [OUTPUT]

@@ -1,16 +1,36 @@
 [PARSER]
     Name        audit_raw
     Format      regex
-    Regex       ^type=(?<type>[^ ]+) msg=audit\((?<timestamp>[^)]+)\): (?<message>.*)$
-    Time_Key    timestamp
+    Regex       ^type=(?<audit_type>[^ ]+) msg=audit\((?<audit_timestamp>[^)]+)\): (?<message>.*)$
+    Time_Key    audit_timestamp
     Time_Format %s.%L
 
 [PARSER]
     Name   audit_msg
     Format regex
-    Regex  msg='(?<msg>[^']+)'
+    Regex  msg='(?<audit_msg>[^']+)'
 
 [PARSER]
-    Name   audit_fields
+    Name   audit_package_fields
     Format regex
-    Regex  op=(?<op>[^ ]+) .*sw="(?<sw>[^"]+)" .*comm="(?<comm>[^"]+)" .*exe="(?<exe>[^"]+)" .*res=(?<res>[^ ]+)
+    Regex  op=(?<package_action>[^ ]+).*sw="(?<package_name>[^"]+)"(?:.*sw_type=(?<package_type>[^ ]+))?(?:.*key_enforce=(?<package_key_enforce>[^ ]+))?(?:.*gpg_res=(?<package_gpg_result>[^ ]+))?(?:.*root_dir="(?<package_root_dir>[^"]+)")?(?:.*comm="(?<process_comm>[^"]+)")?(?:.*exe="(?<process_exe>[^"]+)")?(?:.*hostname=(?<source_hostname>[^ ]+))?(?:.*addr=(?<source_ip>[^ ]+))?(?:.*terminal=(?<terminal>[^ ]+))?.*res=(?<result>[^ ]+)
+
+[PARSER]
+    Name   auth_sshd_accepted
+    Format regex
+    Regex  ^(?<auth_result>Accepted) (?<auth_method>[^ ]+) for (?<auth_user>[^ ]+) from (?<source_ip>[^ ]+) port (?<source_port>[0-9]+)(?: (?<ssh_protocol>.*))?$
+
+[PARSER]
+    Name   auth_sshd_failed
+    Format regex
+    Regex  ^(?<auth_result>Failed) (?<auth_method>[^ ]+) for (?:invalid user )?(?<auth_user>[^ ]+) from (?<source_ip>[^ ]+) port (?<source_port>[0-9]+)(?: (?<ssh_protocol>.*))?$
+
+[PARSER]
+    Name   auth_pam_session
+    Format regex
+    Regex  ^pam_unix\((?<auth_service>[^:]+):session\): session (?<auth_session_state>opened|closed) for user (?<auth_user>[^\( ]+)(?:\(uid=(?<auth_uid>[0-9]+)\))?(?: by (?<auth_actor>[^\( ]+)\(uid=(?<auth_actor_uid>[0-9]+)\))?.*$
+
+[PARSER]
+    Name   auth_sudo_command
+    Format regex
+    Regex  ^\s*(?<auth_actor>[^ ]+) : (?:TTY=(?<terminal>[^;]+) ; )?PWD=(?<sudo_pwd>[^;]+) ; USER=(?<auth_user>[^;]+) ; COMMAND=(?<sudo_command>.*)$
