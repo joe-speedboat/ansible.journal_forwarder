@@ -89,6 +89,22 @@
     Name          parser
     Match         {{ journal_forwarder_tag }}
     Key_Name      message
+    Parser        auth_sshd_invalid_user
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
+    Parser        auth_sshd_closed_invalid_user
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_tag }}
+    Key_Name      message
     Parser        auth_pam_session
     Reserve_Data  On
     Preserve_Key  On
