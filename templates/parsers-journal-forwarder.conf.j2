@@ -16,6 +16,16 @@
     Regex  op=(?<package_action>[^ ]+).*sw="(?<package_name>[^"]+)"(?:.*sw_type=(?<package_type>[^ ]+))?(?:.*key_enforce=(?<package_key_enforce>[^ ]+))?(?:.*gpg_res=(?<package_gpg_result>[^ ]+))?(?:.*root_dir="(?<package_root_dir>[^"]+)")?(?:.*comm="(?<process_comm>[^"]+)")?(?:.*exe="(?<process_exe>[^"]+)")?(?:.*hostname=(?<source_hostname>[^ ]+))?(?:.*addr=(?<source_ip>[^ ]+))?(?:.*terminal=(?<terminal>[^ ]+))?.*res=(?<result>[^ ]+)
 
 [PARSER]
+    Name   audit_apt_execve_fields
+    Format regex
+    Regex  ^argc=.*a0="(?<process_comm>apt(?:-get|-cache)?)" a1="(?<package_action>install|remove|purge|upgrade|dist-upgrade|full-upgrade)"(?: a[0-9]+="-[^"]+")* a[0-9]+="(?<package_name>[^"]+)".*$
+
+[PARSER]
+    Name   audit_dpkg_execve_fields
+    Format regex
+    Regex  ^argc=.*a0="(?:/usr/bin/)?(?<process_comm>dpkg)".*a[0-9]+="--(?<package_action>remove|purge|install|configure)"(?:.*a[0-9]+="(?<package_name>[^"]+)")?.*$
+
+[PARSER]
     Name   auth_sshd_accepted
     Format regex
     Regex  ^(?<auth_result>Accepted) (?<auth_method>[^ ]+) for (?<auth_user>[^ ]+) from (?<source_ip>[^ ]+) port (?<source_port>[0-9]+)(?: (?<ssh_protocol>.*))?$
@@ -33,4 +43,4 @@
 [PARSER]
     Name   auth_sudo_command
     Format regex
-    Regex  ^\s*(?<auth_actor>[^ ]+) : (?:TTY=(?<terminal>[^;]+) ; )?PWD=(?<sudo_pwd>[^;]+) ; USER=(?<auth_user>[^;]+) ; COMMAND=(?<sudo_command>.*)$
+    Regex  ^\s*(?<auth_actor>[^ ]+) :\s+(?:TTY=(?<terminal>[^;]+) ; )?PWD=(?<sudo_pwd>[^;]+) ; USER=(?<auth_user>[^;]+) ; COMMAND=(?<sudo_command>.*)$

@@ -47,6 +47,22 @@
     Preserve_Key  On
 
 [FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_audit_tag }}
+    Key_Name      message
+    Parser        audit_apt_execve_fields
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
+    Name          parser
+    Match         {{ journal_forwarder_audit_tag }}
+    Key_Name      message
+    Parser        audit_dpkg_execve_fields
+    Reserve_Data  On
+    Preserve_Key  On
+
+[FILTER]
     Name    modify
     Match   {{ journal_forwarder_audit_tag }}
     Set     log_type auditd
