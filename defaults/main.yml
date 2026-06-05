@@ -4,7 +4,7 @@
 journal_forwarder_install: true
 
 # Graylog GELF input settings
-graylog_gelf_host: "graylog1.sun.bitbull.ch"
+graylog_gelf_host: "graylog.example.com"
 graylog_gelf_port: 12201
 graylog_gelf_mode: "tcp"
 
