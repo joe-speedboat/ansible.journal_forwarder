@@ -36,6 +36,16 @@
     Regex  ^(?<auth_result>Failed) (?<auth_method>[^ ]+) for (?:invalid user )?(?<auth_user>[^ ]+) from (?<source_ip>[^ ]+) port (?<source_port>[0-9]+)(?: (?<ssh_protocol>.*))?$
 
 [PARSER]
+    Name   auth_sshd_invalid_user
+    Format regex
+    Regex  ^(?<auth_result>Invalid) user (?<auth_user>[^ ]+) from (?<source_ip>[^ ]+) port (?<source_port>[0-9]+)$
+
+[PARSER]
+    Name   auth_sshd_closed_invalid_user
+    Format regex
+    Regex  ^Connection (?<auth_result>closed) by invalid user (?<auth_user>[^ ]+) (?<source_ip>[^ ]+) port (?<source_port>[0-9]+) \[preauth\]$
+
+[PARSER]
     Name   auth_pam_session
     Format regex
     Regex  ^pam_unix\((?<auth_service>[^:]+):session\): session (?<auth_session_state>opened|closed) for user (?<auth_user>[^\( ]+)(?:\(uid=(?<auth_uid>[0-9]+)\))?(?: by (?<auth_actor>[^\( ]+)\(uid=(?<auth_actor_uid>[0-9]+)\))?.*$
