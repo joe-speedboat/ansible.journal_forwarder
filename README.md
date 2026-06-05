@@ -45,6 +45,24 @@ Audit package-change rules are rendered per OS family:
 - Rocky/RHEL-compatible systems watch `rpm`, `dnf`, `yum`, and `/usr/libexec/platform-python`
 - Ubuntu/Debian-compatible systems watch `dpkg`, `apt`, `apt-get`, `apt-cache`, and `/usr/bin/python3`
 
+## Graylog Search Fields
+
+The role keeps the raw `message` and adds normalized fields for common security and package events:
+
+- Package changes: `audit_type`, `audit_msg`, `package_action`, `package_name`, `package_type`, `package_gpg_result`, `process_comm`, `process_exe`, `terminal`, `source_ip`, `result`
+- SSH success/failure: `auth_result`, `auth_method`, `auth_user`, `source_ip`, `source_port`
+- Login/logout sessions: `auth_service`, `auth_session_state`, `auth_user`, `auth_uid`, `auth_actor`, `auth_actor_uid`
+- Sudo commands: `auth_actor`, `auth_user`, `sudo_pwd`, `sudo_command`, `terminal`
+
+Example Graylog searches:
+
+```text
+package_action:install AND package_name:htop*
+source:test-host AND _exists_:sudo_command
+source:test-host AND auth_result:Failed
+source:test-host AND auth_service:sshd AND _exists_:auth_session_state
+```
+
 ## Example Playbook
 
 ```yaml
