@@ -106,8 +106,7 @@ ansible-galaxy install joe-speedboat.journal_forwarder
 ### From Git
 
 ```bash
-git clone https://github.com/joe-speedboat/ansible.journal_forwarder
-ansible-galaxy install -r requirements.yml
+git clone https://github.com/joe-speedboat/ansible.journal_forwarder /etc/ansible/roles/joe-speedboat.journal_forwarder
 ```
 
 ## License
