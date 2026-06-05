@@ -45,6 +45,16 @@ Audit package-change rules are rendered per OS family:
 - Rocky/RHEL-compatible systems watch `rpm`, `dnf`, `yum`, and `/usr/libexec/platform-python`
 - Ubuntu/Debian-compatible systems watch `dpkg`, `apt`, `apt-get`, `apt-cache`, and `/usr/bin/python3`
 
+## Role Task Layout
+
+The role follows the Bitbull role-template task fallback model:
+
+- `tasks/shared/` contains validation and OS-independent Fluent Bit/audit configuration (`05_validate.yml`, `25_configure.yml`).
+- `tasks/Ubuntu/` contains Ubuntu apt repository and package installation tasks (`10_prep.yml`, `20_setup.yml`).
+- `tasks/rhelAll/` contains Rocky/Alma/RHEL-compatible repository and package installation tasks (`10_prep.yml`, `20_setup.yml`).
+
+`tasks/main.yml` and `tasks/include-file.yml` are kept unchanged from the template control flow.
+
 ## Graylog Search Fields
 
 The role keeps the raw `message` and adds normalized fields for common security and package events:

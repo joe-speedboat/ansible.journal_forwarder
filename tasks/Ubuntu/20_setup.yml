@@ -1,0 +1,25 @@
+---
+- name: Install Fluent Bit on Ubuntu
+  ansible.builtin.shell: |
+    set -o pipefail
+    dpkg-query -W -f='${Status}' fluent-bit 2>/dev/null | grep -q 'install ok installed' || apt-get install -y {{ pkg_debian_fluent_bit | join(' ') }}
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_ubuntu_fluent_bit_install
+  changed_when: "journal_forwarder_ubuntu_fluent_bit_install.stdout | length > 0"
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Install audit packages on Ubuntu
+  ansible.builtin.shell: |
+    set -o pipefail
+    dpkg-query -W -f='${Status}' auditd 2>/dev/null | grep -q 'install ok installed' || apt-get install -y {{ pkg_debian_journal_forwarder_audit | join(' ') }}
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_ubuntu_audit_install
+  changed_when: "journal_forwarder_ubuntu_audit_install.stdout | length > 0"
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+...
