@@ -21,8 +21,6 @@ pkg_debian_journal_forwarder_audit:
 
 pkg_debian_repository_dependencies:
   - ca-certificates
-  - curl
-  - gpg
 
 svc_fluent_bit: fluent-bit
 svc_audit:
