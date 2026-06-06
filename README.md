@@ -86,7 +86,8 @@ source:<host> AND journal_forwarder:true AND package_action:install AND package_
 # Package remove, portable across Ubuntu and Rocky/RHEL
 source:<host> AND journal_forwarder:true AND package_action:remove AND package_name:<package>*
 
-# Package update/upgrade, portable search shape
+# Package update/upgrade, portable search shape.
+# Set the Graylog time range wide enough to include an actual update transaction.
 source:<host> AND journal_forwarder:true AND (package_action:update OR package_action:upgrade OR package_action:dist-upgrade OR package_action:full-upgrade)
 
 # RHEL/Rocky native audit package events
@@ -98,7 +99,7 @@ Notes:
 - Rocky/RHEL package modifications use `audit_type=SOFTWARE_UPDATE`.
 - Ubuntu apt/dpkg package modifications use `audit_type=EXECVE`; therefore `audit_type:SOFTWARE_UPDATE` is not portable to Ubuntu.
 - `su - <user>` is logged by PAM as `auth_service=su-l`; use `auth_service:su*` to match both `su` and `su -`.
-- Package update events require an actual package update transaction. If no updates were available during a lab run, the search pattern is documented but no verified sample is shown for that OS.
+- Package update events require an actual package update transaction and must be searched over a time range that includes that transaction. The lab update examples below were visible with a 24h/7d Graylog range, not with the default short range. If no updates were available during a lab run, the search pattern is documented but no verified sample is shown for that OS.
 
 ### Example Matches by OS
 
@@ -121,13 +122,13 @@ Notes:
 | Rocky 8.10 / `test-hermes3` | su | `source:test-hermes3 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfmatrix` | `auth_service=su-l`, `auth_session_state=opened/closed`, `auth_user=jfmatrix` |
 | Rocky 8.10 / `test-hermes3` | package add | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 8.10 / `test-hermes3` | package remove | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 8.10 / `test-hermes3` | package update | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=sudo-1.9.5p2-1.el8_10.5.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 8.10 / `test-hermes3` | package update | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update` with a 24h/7d time range | `timestamp=2026-06-05T16:18:09.584Z`, `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=sudo-1.9.5p2-1.el8_10.5.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 9.7 / `test-hermes4` | login/logout | `source:test-hermes4 AND journal_forwarder:true AND auth_service:sshd AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
 | Rocky 9.7 / `test-hermes4` | sudo | `source:test-hermes4 AND journal_forwarder:true AND _exists_:sudo_command` | `auth_actor=jfmatrix`, `auth_user=root`, `sudo_command=/usr/bin/id` |
 | Rocky 9.7 / `test-hermes4` | su | `source:test-hermes4 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfmatrix` | `auth_service=su-l`, `auth_session_state=opened/closed`, `auth_user=jfmatrix` |
 | Rocky 9.7 / `test-hermes4` | package add | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 9.7 / `test-hermes4` | package remove | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.7 / `test-hermes4` | package update | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=sudo-1.9.17p2-3.el9_8.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 9.7 / `test-hermes4` | package update | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update` with a 24h/7d time range | `timestamp=2026-06-05T16:18:28.202Z`, `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=sudo-1.9.17p2-3.el9_8.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 10.1 / `test-hermes5` | login/logout | `source:test-hermes5 AND journal_forwarder:true AND auth_service:sshd AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
 | Rocky 10.1 / `test-hermes5` | sudo | `source:test-hermes5 AND journal_forwarder:true AND _exists_:sudo_command` | `auth_actor=jfmatrix`, `auth_user=root`, `sudo_command=/usr/bin/id` |
 | Rocky 10.1 / `test-hermes5` | su | `source:test-hermes5 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfmatrix` | `auth_service=su-l`, `auth_session_state=opened/closed`, `auth_user=jfmatrix` |
