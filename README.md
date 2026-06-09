@@ -22,7 +22,7 @@ The role can also forward auditd package-change events from `/var/log/audit/audi
 Variables are defined in `defaults/main.yml`.
 
 - `journal_forwarder_install`: `true` — Toggle installation on/off.
-- `graylog_gelf_host`: `graylog1.sun.bitbull.ch` — Graylog GELF input host.
+- `graylog_gelf_host`: `graylog.example.com` — Graylog GELF input host.
 - `graylog_gelf_port`: `12201` — Graylog GELF input port.
 - `graylog_gelf_mode`: `tcp` — GELF transport mode, `tcp` or `udp`.
 - `graylog_fluent_bit_workers`: `2` — Number of Fluent Bit output workers.
@@ -37,7 +37,7 @@ Variables are defined in `defaults/main.yml`.
 
 The role configures the official Fluent Bit repository for the target OS:
 
-- Ubuntu: `https://packages.fluentbit.io/ubuntu/<codename>` with the Fluent Bit key in `/usr/share/keyrings/fluentbit-keyring.gpg`
+- Ubuntu: official Fluent Bit shell setup writes `/usr/share/keyrings/fluentbit-keyring.gpg` and `/etc/apt/sources.list.d/fluent-bit.list` for `https://packages.fluentbit.io/ubuntu/<codename>`
 - Rocky/RHEL-compatible systems: `https://packages.fluentbit.io/rockylinux/<major-version>/`
 
 Audit package-change rules are rendered per OS family:
@@ -71,9 +71,9 @@ The following search criteria and example fields were verified after redeploying
 Validation run:
 
 ```text
-Auth/session marker: jfverify-20260606103556
-Package marker:      jfpkg-20260606103915
-Graylog time window: 2026-06-06T08:38:15Z to 2026-06-06T08:46:08Z for package events
+Auth/session marker: jfpostreboot-20260609145344
+Package marker:      jfpkgpost-20260609145344
+Graylog time window: 2026-06-09T12:53Z to 2026-06-09T12:54Z for post-reboot lab events
 ```
 
 Supported/tested lab matrix:
@@ -83,8 +83,8 @@ Supported/tested lab matrix:
 | `test-hermes1` | Ubuntu 24.04 |
 | `test-hermes2` | Ubuntu 26.04 |
 | `test-hermes3` | Rocky Linux 8.10 |
-| `test-hermes4` | Rocky Linux 9.8 |
-| `test-hermes5` | Rocky Linux 10.2 |
+| `test-hermes4` | Rocky Linux 9.7 |
+| `test-hermes5` | Rocky Linux 10.1 |
 
 General rules:
 
@@ -141,18 +141,18 @@ source:<host> AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND pack
 | Rocky 8.10 / `test-hermes3` | package add | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 8.10 / `test-hermes3` | package remove | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 | Rocky 8.10 / `test-hermes3` | package update | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.8 / `test-hermes4` | login/logout | `source:test-hermes4 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Rocky 9.8 / `test-hermes4` | sudo | `source:test-hermes4 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Rocky 9.8 / `test-hermes4` | su | `source:test-hermes4 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Rocky 9.8 / `test-hermes4` | package add | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.8 / `test-hermes4` | package remove | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.8 / `test-hermes4` | package update | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.2 / `test-hermes5` | login/logout | `source:test-hermes5 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Rocky 10.2 / `test-hermes5` | sudo | `source:test-hermes5 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Rocky 10.2 / `test-hermes5` | su | `source:test-hermes5 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Rocky 10.2 / `test-hermes5` | package add | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.2 / `test-hermes5` | package remove | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.2 / `test-hermes5` | package update | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 9.7 / `test-hermes4` | login/logout | `source:test-hermes4 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
+| Rocky 9.7 / `test-hermes4` | sudo | `source:test-hermes4 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
+| Rocky 9.7 / `test-hermes4` | su | `source:test-hermes4 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
+| Rocky 9.7 / `test-hermes4` | package add | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 9.7 / `test-hermes4` | package remove | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 9.7 / `test-hermes4` | package update | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 10.1 / `test-hermes5` | login/logout | `source:test-hermes5 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
+| Rocky 10.1 / `test-hermes5` | sudo | `source:test-hermes5 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
+| Rocky 10.1 / `test-hermes5` | su | `source:test-hermes5 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
+| Rocky 10.1 / `test-hermes5` | package add | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 10.1 / `test-hermes5` | package remove | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+| Rocky 10.1 / `test-hermes5` | package update | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
 
 ## Example Playbook
 
