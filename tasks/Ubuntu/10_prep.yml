@@ -1,16 +1,7 @@
 ---
-- name: Remove obsolete Fluent Bit apt repository key variants
+- name: Remove obsolete Fluent Bit deb822 repository
   ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /usr/share/keyrings/fluentbit-keyring.asc
-    - /usr/share/keyrings/fluentbit-keyring.gpg
-  when: journal_forwarder_install | bool
-
-- name: Remove obsolete Fluent Bit apt repository list
-  ansible.builtin.file:
-    path: /etc/apt/sources.list.d/fluent-bit.list
+    path: /etc/apt/sources.list.d/fluent-bit.sources
     state: absent
   when: journal_forwarder_install | bool
 
@@ -21,30 +12,46 @@
     update_cache: true
   when: journal_forwarder_install | bool
 
-- name: Configure Fluent Bit deb822 apt repository
-  ansible.builtin.deb822_repository:
-    name: fluent-bit
-    types:
-      - deb
-    uris:
-      - https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }}
-    suites:
-      - "{{ ansible_distribution_release }}"
-    components:
-      - main
-    signed_by: https://packages.fluentbit.io/fluentbit.key
-    state: present
-    enabled: true
-    install_python_debian: true
-  register: journal_forwarder_apt_repo
+- name: Install Fluent Bit server GPG key on Ubuntu
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://packages.fluentbit.io/fluentbit.key | gpg --dearmor > /usr/share/keyrings/fluentbit-keyring.gpg.tmp
+    if ! cmp -s /usr/share/keyrings/fluentbit-keyring.gpg.tmp /usr/share/keyrings/fluentbit-keyring.gpg 2>/dev/null; then
+      mv /usr/share/keyrings/fluentbit-keyring.gpg.tmp /usr/share/keyrings/fluentbit-keyring.gpg
+      chmod 0644 /usr/share/keyrings/fluentbit-keyring.gpg
+      echo changed
+    else
+      rm -f /usr/share/keyrings/fluentbit-keyring.gpg.tmp
+    fi
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_fluent_bit_key
+  changed_when: "'changed' in journal_forwarder_fluent_bit_key.stdout"
   when: journal_forwarder_install | bool
 
-- name: Update apt cache after Fluent Bit repository change
+- name: Configure Fluent Bit apt source list on Ubuntu
+  ansible.builtin.shell: |
+    set -euo pipefail
+    codename=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || lsb_release -cs 2>/dev/null)
+    expected="deb [signed-by=/usr/share/keyrings/fluentbit-keyring.gpg] https://packages.fluentbit.io/ubuntu/${codename} ${codename} main"
+    dest=/etc/apt/sources.list.d/fluent-bit.list
+    if [ ! -f "$dest" ] || [ "$(cat "$dest")" != "$expected" ]; then
+      printf '%s\n' "$expected" > "$dest"
+      chmod 0644 "$dest"
+      echo changed
+    fi
+  args:
+    executable: /bin/bash
+  register: journal_forwarder_fluent_bit_list
+  changed_when: "'changed' in journal_forwarder_fluent_bit_list.stdout"
+  when: journal_forwarder_install | bool
+
+- name: Update apt cache after Fluent Bit repository shell setup
   ansible.builtin.apt:
     update_cache: true
   changed_when: false
   when:
     - journal_forwarder_install | bool
-    - journal_forwarder_apt_repo is changed
+    - journal_forwarder_fluent_bit_key is changed or journal_forwarder_fluent_bit_list is changed
 
 ...
