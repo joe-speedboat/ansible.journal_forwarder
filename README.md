@@ -2,7 +2,8 @@
 
 Linux-only Ansible role for forwarding systemd journal, audit, and selected security/application logs to **Graylog** with **Fluent Bit** over GELF.
 
-> Windows Event Log forwarding is handled by `joe-speedboat.log_forwarder` with Winlogbeat. This role owns the Linux/Fluent Bit side only.
+> Windows Event Log forwarding is handled by Ansible role [`joe-speedboat.winlogbeat_forwarder`](https://github.com/joe-speedboat/ansible.winlogbeat_forwarder) with Winlogbeat OSS.   
+This role owns the Linux/Fluent Bit side only.
 
 ## Requirements
 
