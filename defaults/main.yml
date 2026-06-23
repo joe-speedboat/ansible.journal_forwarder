@@ -1,26 +1,35 @@
-# defaults/main.yml
 ---
 # Toggle installation
 journal_forwarder_install: true
+journal_forwarder_remove_repo: true  # remove Fluent Bit repo on uninstall
 
 # Graylog GELF input settings
-graylog_gelf_host: "graylog.example.com"
+graylog_gelf_host: graylog.example.com
 graylog_gelf_port: 12201
-graylog_gelf_mode: "tcp"
+graylog_gelf_mode: tcp
 
 # Fluent Bit runtime settings
 graylog_fluent_bit_workers: 2
-journal_forwarder_tag: "journald"
+journal_forwarder_tag: journald
 journal_forwarder_read_from_tail: true
 journal_forwarder_storage_path: /var/lib/fluent-bit
 journal_forwarder_systemd_db: "{{ journal_forwarder_storage_path }}/flb_systemd.db"
 
-# Audit log forwarding.
-# When enabled, auditd is installed/started, package-manager execution audit
-# rules are deployed, and /var/log/audit/audit.log is tailed by Fluent Bit.
+# Audit log forwarding
 journal_forwarder_audit_enabled: true
-journal_forwarder_audit_tag: "audit"
+journal_forwarder_audit_remove: true  # remove audit packages on uninstall
+journal_forwarder_audit_tag: audit
 journal_forwarder_audit_db: "{{ journal_forwarder_storage_path }}/flb_audit.db"
 journal_forwarder_audit_rules_file: /etc/audit/rules.d/package.rules
 
+# Additional Linux security/application log files
+journal_forwarder_security_files_enabled: true
+journal_forwarder_security_files_tag: security_files
+journal_forwarder_security_files_db: "{{ journal_forwarder_storage_path }}/flb_security_files.db"
+journal_forwarder_security_log_paths:
+  - /var/log/auth.log
+  - /var/log/secure
+  - /var/log/nginx/*.log
+  - /var/log/apache2/*.log
+  - /var/log/httpd/*.log
 ...

@@ -1,0 +1,56 @@
+---
+- name: Stop and disable Fluent Bit service
+  ansible.builtin.systemd:
+    name: fluent-bit
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove Fluent Bit package
+  ansible.builtin.apt:
+    name: "{{ pkg_debian_fluent_bit }}"
+    state: absent
+    purge: yes
+  ignore_errors: true
+
+- name: Remove Fluent Bit configuration and data
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/fluent-bit
+    - /var/lib/fluent-bit
+    - /opt/fluent-bit
+  ignore_errors: true
+
+- name: Remove audit packages
+  ansible.builtin.apt:
+    name: "{{ pkg_debian_journal_forwarder_audit }}"
+    state: absent
+    purge: yes
+  ignore_errors: true
+  when:
+    - journal_forwarder_audit_enabled | bool
+    - journal_forwarder_audit_remove | bool
+
+- name: Remove audit rules
+  ansible.builtin.file:
+    path: "{{ journal_forwarder_audit_rules_file }}"
+    state: absent
+  ignore_errors: true
+  notify: reload audit rules
+
+- name: Remove Fluent Bit repository
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/fluent-bit.list
+    state: absent
+  ignore_errors: true
+  when: journal_forwarder_remove_repo | bool
+
+- name: Remove Fluent Bit GPG keyring (Ubuntu)
+  ansible.builtin.file:
+    path: /usr/share/keyrings/fluentbit-keyring.gpg
+    state: absent
+  ignore_errors: true
+  when: journal_forwarder_remove_repo | bool
+...

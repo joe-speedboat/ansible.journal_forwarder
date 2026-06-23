@@ -1,0 +1,45 @@
+---
+- name: Install curl and ca-certificates (RHEL 8)
+  ansible.builtin.command: dnf -y install curl ca-certificates
+  args:
+    creates: /usr/bin/curl
+  when: journal_forwarder_install | bool
+
+- name: Download Fluent Bit yum repository config (RHEL 8)
+  ansible.builtin.command:
+    argv:
+      - bash
+      - -c
+      - |
+        dest=/etc/yum.repos.d/fluent-bit.repo
+        if [ ! -f "$dest" ]; then
+          printf '%s\n' '[fluent-bit]' 'name=Fluent Bit' \
+            'baseurl=https://packages.fluentbit.io/rockylinux/8/' \
+            'gpgcheck=1' 'repo_gpgcheck=1' \
+            'gpgkey=https://packages.fluentbit.io/fluentbit.key' \
+            'enabled=1' > "$dest"
+        fi
+  args:
+    creates: /etc/yum.repos.d/fluent-bit.repo
+  when: journal_forwarder_install | bool
+
+- name: Import Fluent Bit GPG key (RHEL 8)
+  ansible.builtin.command: rpm --import https://packages.fluentbit.io/fluentbit.key
+  changed_when: false
+  when: journal_forwarder_install | bool
+
+- name: Install Fluent Bit (RHEL 8)
+  ansible.builtin.command: dnf -y install {{ pkg_rhel_fluent_bit | join(' ') }}
+  args:
+    creates: /opt/fluent-bit/bin/fluent-bit
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Install audit packages (RHEL 8)
+  ansible.builtin.command: dnf -y install {{ pkg_rhel_journal_forwarder_audit | join(' ') }}
+  args:
+    creates: /usr/sbin/auditd
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+...

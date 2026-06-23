@@ -66,7 +66,25 @@
     Name    modify
     Match   {{ journal_forwarder_audit_tag }}
     Set     log_type auditd
-    Add     hostname {{ ansible_hostname }}
+    Add     hostname ${HOSTNAME}
+{% endif %}
+
+{% if journal_forwarder_security_files_enabled | bool %}
+[INPUT]
+    Name              tail
+    Tag               {{ journal_forwarder_security_files_tag }}
+    Path              {{ journal_forwarder_security_log_paths | join(',') }}
+    DB                {{ journal_forwarder_security_files_db }}
+    Read_from_Head    On
+    Mem_Buf_Limit     20MB
+    Skip_Long_Lines   On
+
+[FILTER]
+    Name    modify
+    Match   {{ journal_forwarder_security_files_tag }}
+    Rename  log message
+    Set     log_type security_file
+    Add     hostname ${HOSTNAME}
 {% endif %}
 
 [FILTER]
@@ -121,6 +139,7 @@
     Name    modify
     Match   {{ journal_forwarder_tag }}
     Set     log_type journald
+    Add     hostname ${HOSTNAME}
 
 [FILTER]
     Name    modify

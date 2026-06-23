@@ -1,0 +1,70 @@
+---
+# uninstall.yml - remove log_forwarder completely (Windows + Linux)
+# Usage:
+#   ansible.builtin.include_role:
+#     name: joe-speedboat.log_forwarder
+#     tasks_from: uninstall.yml
+#
+
+- name: Gather facts if not already available
+  ansible.builtin.setup:
+  when: ansible_facts.keys() | length == 0
+
+- name: Create rhelAll fact fallback
+  ansible.builtin.set_fact:
+    ansible_distribution_combine: dummy
+
+- name: Create rhelAll fact, useful when AlmaLinux, Rocky, RHEL, ... all use the same Ansible code base
+  ansible.builtin.set_fact:
+    ansible_distribution_combine: rhelAll
+  when: >-
+    ansible_distribution == "AlmaLinux" or
+    ansible_distribution == "Rocky" or
+    ansible_distribution == "RedHat"
+
+- name: fix ansible_python_interpreter, for Rocky and AlmaLinux
+  block:
+    - name: rhelClone v8
+      ansible.builtin.set_fact:
+        ansible_python_interpreter: /usr/bin/python3
+      when: ansible_distribution_major_version|int == 8
+    - name: rhelClone v9
+      ansible.builtin.set_fact:
+        ansible_python_interpreter: /usr/bin/python3
+      when: ansible_distribution_major_version|int == 9
+  when: >-
+    ansible_distribution == "AlmaLinux" or
+    ansible_distribution == "Rocky"
+
+- name: find role directory (awx aware)
+  ansible.builtin.find:
+    paths:
+      - /runner/requirements_roles
+      - "{{ lookup('env', 'PWD') }}/roles/{{ role_path|basename }}/tasks"
+      - "{{ lookup('env', 'HOME') }}/.ansible/roles/{{ role_path|basename }}/tasks"
+      - "/usr/share/ansible/roles/{{ role_path|basename }}/tasks"
+      - "/etc/ansible/roles/{{ role_path|basename }}/tasks"
+      - "/runner/project/roles/{{ role_path|basename }}/tasks"
+      - "/runner/requirements_roles/{{ role_path|basename }}/tasks"
+    recurse: no
+    depth: 1
+    file_type: file
+    use_regex: no
+    patterns: main.yml
+  delegate_to: localhost
+  become: no
+  run_once: True
+  register: found_task_dirs
+  no_log: True
+
+- name: define tasks directory
+  ansible.builtin.set_fact:
+    "{{ 'task_dir_' + role_name|split('.')|last }}": "{{ found_task_dirs.files[0].path|dirname }}"
+
+- name: set include_file_name for uninstall
+  ansible.builtin.set_fact:
+    include_file_name: uninstall.yml
+
+- name: Include OS-specific uninstall tasks
+  ansible.builtin.include_tasks: include-file.yml
+...

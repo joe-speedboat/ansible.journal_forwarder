@@ -1,0 +1,24 @@
+---
+- name: Enable and start auditd
+  ansible.builtin.systemd:
+    name: "{{ svc_audit[ansible_os_family] | default('auditd') }}"
+    enabled: true
+    state: started
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+- name: Load active audit rules
+  ansible.builtin.command: augenrules --load
+  changed_when: false
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
+- name: Enable and start fluent-bit
+  ansible.builtin.systemd:
+    name: "{{ svc_fluent_bit }}"
+    enabled: true
+    state: started
+  when: journal_forwarder_install | bool
+...

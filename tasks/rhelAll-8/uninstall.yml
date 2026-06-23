@@ -1,0 +1,44 @@
+---
+- name: Stop and disable Fluent Bit service (RHEL 8)
+  ansible.builtin.command: systemctl disable --now fluent-bit
+  ignore_errors: true
+
+- name: Remove Fluent Bit package (RHEL 8)
+  ansible.builtin.command: dnf -y remove {{ pkg_rhel_fluent_bit | join(' ') }}
+  register: fluent_bit_remove
+  changed_when: "'Nothing to do.' not in fluent_bit_remove.stdout"
+  ignore_errors: true
+
+- name: Remove Fluent Bit configuration and data
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/fluent-bit
+    - /var/lib/fluent-bit
+    - /opt/fluent-bit
+  ignore_errors: true
+
+- name: Remove audit packages (RHEL 8)
+  ansible.builtin.command: dnf -y remove {{ pkg_rhel_journal_forwarder_audit | join(' ') }}
+  register: audit_remove
+  changed_when: "'Nothing to do.' not in audit_remove.stdout"
+  ignore_errors: true
+  when:
+    - journal_forwarder_audit_enabled | bool
+    - journal_forwarder_audit_remove | bool
+
+- name: Remove audit rules
+  ansible.builtin.file:
+    path: "{{ journal_forwarder_audit_rules_file }}"
+    state: absent
+  ignore_errors: true
+  notify: reload audit rules
+
+- name: Remove Fluent Bit repository (RHEL 8)
+  ansible.builtin.command: rm -f /etc/yum.repos.d/fluent-bit.repo
+  args:
+    removes: /etc/yum.repos.d/fluent-bit.repo
+  ignore_errors: true
+  when: journal_forwarder_remove_repo | bool
+...
