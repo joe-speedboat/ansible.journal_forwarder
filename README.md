@@ -32,6 +32,16 @@ Create a GELF TCP input before deploying this role. Default port:
 12201/tcp
 ```
 
+## Install role (latest release)
+### From Ansible Galaxy
+```bash
+ansible-galaxy install joe-speedboat.journal_forwarder
+```
+### From Github (no release awareness)
+```bash
+git clone https://github.com/joe-speedboat/ansible.journal_forwarder.git /etc/ansible/roles/joe-speedboat.journal_forwarder
+```
+
 ## Quick Start
 
 ```yaml
@@ -103,11 +113,11 @@ The role adds `journal_forwarder=true` to all records and sets `log_type` per so
 Useful search examples:
 
 ```text
-source:<host> AND journal_forwarder:true AND log_type:journald
-source:<host> AND journal_forwarder:true AND log_type:auditd
-source:<host> AND journal_forwarder:true AND log_type:security_file
-source:<host> AND journal_forwarder:true AND package_action:install AND package_name:<package>*
-source:<host> AND journal_forwarder:true AND _exists_:sudo_command
+journal_forwarder: true AND log_type:journald
+journal_forwarder: true AND log_type:auditd
+journal_forwarder: true AND log_type:security_file
+journal_forwarder: true AND _exists_: package_action
+journal_forwarder: true AND _exists_:sudo_command
 ```
 
 ## Role Layout
