@@ -8,8 +8,14 @@
   when: not ansible_check_mode
 
 - name: reload audit rules
-  ansible.builtin.command: augenrules --load
-  changed_when: true
-  ignore_errors: true
+  ansible.builtin.shell: |
+    if command -v augenrules >/dev/null 2>&1; then
+      augenrules --load
+      echo changed
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: "'changed' in journal_forwarder_augenrules_reload.stdout"
+  register: journal_forwarder_augenrules_reload
   when: not ansible_check_mode
 ...
