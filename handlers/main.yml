@@ -1,12 +1,15 @@
-# handlers/main.yml
 ---
+# handlers/main.yml - Fluent Bit and audit lifecycle handlers
+
 - name: restart fluent-bit
   ansible.builtin.systemd:
     name: fluent-bit
     state: restarted
+  when: not ansible_check_mode
 
 - name: reload audit rules
   ansible.builtin.command: augenrules --load
   changed_when: true
-
+  ignore_errors: true
+  when: not ansible_check_mode
 ...

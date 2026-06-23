@@ -46,7 +46,7 @@
   changed_when: "'changed' in journal_forwarder_fluent_bit_list.stdout"
   when: journal_forwarder_install | bool
 
-- name: Update apt cache after Fluent Bit repository shell setup
+- name: Update apt cache after Fluent Bit repository setup
   ansible.builtin.apt:
     update_cache: true
   changed_when: false
@@ -54,4 +54,18 @@
     - journal_forwarder_install | bool
     - journal_forwarder_fluent_bit_key is changed or journal_forwarder_fluent_bit_list is changed
 
+- name: Install Fluent Bit on Ubuntu
+  ansible.builtin.apt:
+    name: "{{ pkg_debian_fluent_bit }}"
+    state: present
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Install audit packages on Ubuntu
+  ansible.builtin.apt:
+    name: "{{ pkg_debian_journal_forwarder_audit }}"
+    state: present
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
 ...

@@ -8,6 +8,30 @@
     mode: '0755'
   when: journal_forwarder_install | bool
 
+- name: Ensure optional security log directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /var/log/nginx
+    - /var/log/apache2
+    - /var/log/httpd
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_security_files_enabled | bool
+
+- name: Ensure Fluent Bit config directory exists
+  ansible.builtin.file:
+    path: /etc/fluent-bit
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: journal_forwarder_install | bool
+
 - name: Deploy Fluent Bit parser configuration
   ansible.builtin.template:
     src: parsers-journal-forwarder.conf.j2
@@ -28,6 +52,15 @@
   notify: restart fluent-bit
   when: journal_forwarder_install | bool
 
+- name: Remove legacy journal_forwarder audit package rules file
+  ansible.builtin.file:
+    path: /etc/audit/rules.d/package.rules
+    state: absent
+  notify: reload audit rules
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
+
 - name: Deploy audit package-change rules
   ansible.builtin.template:
     src: audit-package.rules.j2
@@ -39,28 +72,4 @@
   when:
     - journal_forwarder_install | bool
     - journal_forwarder_audit_enabled | bool
-
-- name: Enable and start auditd
-  ansible.builtin.systemd:
-    name: "{{ svc_audit[ansible_os_family] | default('auditd') }}"
-    enabled: true
-    state: started
-  when:
-    - journal_forwarder_install | bool
-    - journal_forwarder_audit_enabled | bool
-
-- name: Load active audit rules
-  ansible.builtin.command: augenrules --load
-  changed_when: false
-  when:
-    - journal_forwarder_install | bool
-    - journal_forwarder_audit_enabled | bool
-
-- name: Enable and start fluent-bit
-  ansible.builtin.systemd:
-    name: "{{ svc_fluent_bit }}"
-    enabled: true
-    state: started
-  when: journal_forwarder_install | bool
-
 ...

@@ -10,4 +10,18 @@
     enabled: true
   when: journal_forwarder_install | bool
 
+- name: Install Fluent Bit
+  ansible.builtin.dnf:
+    name: "{{ pkg_rhel_fluent_bit }}"
+    state: present
+  notify: restart fluent-bit
+  when: journal_forwarder_install | bool
+
+- name: Install audit packages
+  ansible.builtin.dnf:
+    name: "{{ pkg_rhel_journal_forwarder_audit }}"
+    state: present
+  when:
+    - journal_forwarder_install | bool
+    - journal_forwarder_audit_enabled | bool
 ...

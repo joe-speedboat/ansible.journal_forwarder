@@ -1,196 +1,133 @@
-# Ansible Role: joe-speedboat.journal_forwarder
+# Ansible Role: `joe-speedboat.journal_forwarder`
 
-This role installs and configures Fluent Bit to forward systemd journal logs to Graylog via GELF input. It preserves structured journal metadata such as `hostname`, `priority`, `systemd_unit`, and `message` by using Fluent Bit's native `systemd` input.
+Linux-only Ansible role for forwarding systemd journal, audit, and selected security/application logs to **Graylog** with **Fluent Bit** over GELF.
 
-The role can also forward auditd package-change events from `/var/log/audit/audit.log`. When audit forwarding is enabled, the role installs and starts `auditd`, deploys package-manager execution audit rules, loads them with `augenrules`, and configures Fluent Bit parsers for common audit fields.
+> Windows Event Log forwarding is handled by `joe-speedboat.log_forwarder` with Winlogbeat. This role owns the Linux/Fluent Bit side only.
 
 ## Requirements
 
-* Ansible 2.9 or higher
-* systemd-based Linux distribution
-* Supported/tested targets:
-  * Ubuntu 24.04 LTS
-  * Ubuntu 26.04 LTS
-  * Rocky Linux 8.10
-  * Rocky Linux 9.7
-  * Rocky Linux 10.1
-* Network access from the target to `https://packages.fluentbit.io/` so the role can configure the official Fluent Bit package repository
-* Graylog server with GELF input enabled, by default port `12201/tcp`
+### Control Node
 
-## Role Variables
+- Ansible >= 2.14
+- SSH access to Linux targets with root / privilege escalation
 
-Variables are defined in `defaults/main.yml`.
+### Target Nodes
 
-- `journal_forwarder_install`: `true` — Toggle installation on/off.
-- `graylog_gelf_host`: `graylog.example.com` — Graylog GELF input host.
-- `graylog_gelf_port`: `12201` — Graylog GELF input port.
-- `graylog_gelf_mode`: `tcp` — GELF transport mode, `tcp` or `udp`.
-- `graylog_fluent_bit_workers`: `2` — Number of Fluent Bit output workers.
-- `journal_forwarder_tag`: `journald` — Tag for the systemd journal input.
-- `journal_forwarder_read_from_tail`: `true` — Start reading journal entries from the tail.
-- `journal_forwarder_storage_path`: `/var/lib/fluent-bit` — Fluent Bit state database directory.
-- `journal_forwarder_audit_enabled`: `true` — Enable auditd package-change forwarding.
-- `journal_forwarder_audit_tag`: `audit` — Tag for audit log input.
-- `journal_forwarder_audit_rules_file`: `/etc/audit/rules.d/package.rules` — Audit rules destination.
+- systemd-based Linux distribution
+- Package manager access to the official Fluent Bit repository at `https://packages.fluentbit.io/`
+- Outbound access to the Graylog GELF input, default `12201/tcp`
 
-## Package Repositories
+Supported/tested families:
 
-The role configures the official Fluent Bit repository for the target OS:
+- Ubuntu 24/26
+- Rocky/RHEL/Alma 8-10
 
-- Ubuntu: official Fluent Bit shell setup writes `/usr/share/keyrings/fluentbit-keyring.gpg` and `/etc/apt/sources.list.d/fluent-bit.list` for `https://packages.fluentbit.io/ubuntu/<codename>`
-- Rocky/RHEL-compatible systems: `https://packages.fluentbit.io/rockylinux/<major-version>/`
+Rocky/RHEL 8 targets need a Python version supported by your Ansible controller for fact gathering. The role keeps command-module fallbacks for RHEL 8 package tasks.
 
-Audit package-change rules are rendered per OS family:
+### Graylog
 
-- Rocky/RHEL-compatible systems watch `rpm`, `dnf`, `yum`, and `/usr/libexec/platform-python`
-- Ubuntu/Debian-compatible systems watch `dpkg`, `apt`, `apt-get`, `apt-cache`, and `/usr/bin/python3`
+Create a GELF TCP input before deploying this role. Default port:
 
-## Role Task Layout
+```text
+12201/tcp
+```
 
-The role follows the Bitbull role-template task fallback model:
+## Quick Start
 
-- `tasks/shared/` contains validation and OS-independent Fluent Bit/audit configuration (`05_validate.yml`, `25_configure.yml`).
-- `tasks/Ubuntu/` contains Ubuntu apt repository and package installation tasks (`10_prep.yml`, `20_setup.yml`).
-- `tasks/rhelAll/` contains Rocky/Alma/RHEL-compatible repository and package installation tasks (`10_prep.yml`, `20_setup.yml`).
+```yaml
+- name: Forward Linux logs to Graylog
+  hosts: linux
+  gather_facts: true
+  become: true
+  roles:
+    - role: joe-speedboat.journal_forwarder
+      vars:
+        graylog_gelf_host: graylog.example.com
+        graylog_gelf_port: 12201
+```
 
-`tasks/main.yml` and `tasks/include-file.yml` are kept unchanged from the template control flow.
+## Uninstall
+
+```yaml
+- name: Remove Linux log forwarding
+  hosts: linux
+  gather_facts: true
+  become: true
+  tasks:
+    - ansible.builtin.include_role:
+        name: joe-speedboat.journal_forwarder
+        tasks_from: uninstall.yml
+```
+
+## Variables
+
+### Graylog GELF Connection
+
+| Variable | Default | Description |
+|---|---|---|
+| `graylog_gelf_host` | `graylog.example.com` | Graylog GELF input host |
+| `graylog_gelf_port` | `12201` | Graylog GELF input port |
+| `graylog_gelf_mode` | `tcp` | GELF transport mode |
+
+### Fluent Bit Runtime
+
+| Variable | Default | Description |
+|---|---|---|
+| `journal_forwarder_install` | `true` | Enable installation/configuration |
+| `graylog_fluent_bit_workers` | `2` | Fluent Bit output worker count |
+| `journal_forwarder_tag` | `journald` | Tag for systemd journal input |
+| `journal_forwarder_read_from_tail` | `true` | Start journald reading from tail |
+| `journal_forwarder_storage_path` | `/var/lib/fluent-bit` | Fluent Bit state directory |
+| `journal_forwarder_systemd_db` | `{{ journal_forwarder_storage_path }}/flb_systemd.db` | journald cursor DB path |
+
+### Audit and Security File Logs
+
+| Variable | Default | Description |
+|---|---|---|
+| `journal_forwarder_audit_enabled` | `true` | Enable auditd package-change forwarding |
+| `journal_forwarder_audit_remove` | `true` | Remove audit packages during uninstall |
+| `journal_forwarder_audit_tag` | `audit` | Tag for audit input |
+| `journal_forwarder_audit_rules_file` | `/etc/audit/rules.d/package.rules` | Audit rules destination |
+| `journal_forwarder_security_files_enabled` | `true` | Forward auth.log/secure/web log files |
+| `journal_forwarder_security_log_paths` | auth.log, secure, nginx, apache/httpd | Tail file paths |
+| `journal_forwarder_remove_repo` | `true` | Remove Fluent Bit repository during uninstall |
 
 ## Graylog Search Fields
 
-The role keeps the raw `message` and adds normalized fields for common security and package events:
+The role adds `journal_forwarder=true` to all records and sets `log_type` per source:
 
-- Package changes: `audit_type`, `audit_msg`, `package_action`, `package_name`, `package_type`, `package_gpg_result`, `process_comm`, `process_exe`, `terminal`, `source_ip`, `result`
-- SSH success/failure/invalid-user attempts: `auth_result`, `auth_method`, `auth_user`, `source_ip`, `source_port`
-- Login/logout sessions: `auth_service`, `auth_session_state`, `auth_user`, `auth_uid`, `auth_actor`, `auth_actor_uid`
-- Sudo commands: `auth_actor`, `auth_user`, `sudo_pwd`, `sudo_command`, `terminal`
+- `journald`
+- `auditd`
+- `security_file`
 
-### Graylog Search Patterns and Lab Examples
-
-The following search criteria and example fields were verified after redeploying the current `master` role to the lab matrix and generating fresh events.
-
-Validation run:
+Useful search examples:
 
 ```text
-Auth/session marker: jfpostreboot-20260609145344
-Package marker:      jfpkgpost-20260609145344
-Graylog time window: 2026-06-09T12:53Z to 2026-06-09T12:54Z for post-reboot lab events
-```
-
-Supported/tested lab matrix:
-
-| Host | OS |
-|---|---|
-| `test-hermes1` | Ubuntu 24.04 |
-| `test-hermes2` | Ubuntu 26.04 |
-| `test-hermes3` | Rocky Linux 8.10 |
-| `test-hermes4` | Rocky Linux 9.7 |
-| `test-hermes5` | Rocky Linux 10.1 |
-
-General rules:
-
-- Always scope operational searches with `source:<host>` when validating one host.
-- Rocky/RHEL package modifications use `audit_type=SOFTWARE_UPDATE`.
-- Ubuntu apt/dpkg package modifications use `audit_type=EXECVE`; therefore `audit_type:SOFTWARE_UPDATE` is not portable to Ubuntu.
-- `su - <user>` is logged by PAM as `auth_service=su-l`; use `auth_service:su*` to match `su` and `su -` sessions.
-- Package update events require a real package-manager update/reinstall transaction in the selected Graylog time range.
-
-#### Common search templates
-
-```text
-# Login/logout sessions, including SSH
-source:<host> AND journal_forwarder:true AND auth_service:sshd AND _exists_:auth_session_state
-
-# sudo command execution
-source:<host> AND journal_forwarder:true AND _exists_:sudo_command
-
-# su and su - sessions
-source:<host> AND journal_forwarder:true AND auth_service:su* AND _exists_:auth_session_state
-
-# Package install, portable across Ubuntu and Rocky/RHEL
+source:<host> AND journal_forwarder:true AND log_type:journald
+source:<host> AND journal_forwarder:true AND log_type:auditd
+source:<host> AND journal_forwarder:true AND log_type:security_file
 source:<host> AND journal_forwarder:true AND package_action:install AND package_name:<package>*
-
-# Package remove, portable across Ubuntu and Rocky/RHEL
-source:<host> AND journal_forwarder:true AND package_action:remove AND package_name:<package>*
-
-# Package update/upgrade, portable across Ubuntu and Rocky/RHEL
-source:<host> AND journal_forwarder:true AND (package_action:update OR package_action:upgrade OR package_action:dist-upgrade OR package_action:full-upgrade) AND package_name:<package>*
-
-# Rocky/RHEL native audit package events
-source:<host> AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:<install|remove|update> AND package_name:<package>*
+source:<host> AND journal_forwarder:true AND _exists_:sudo_command
 ```
 
-#### Verified search criteria and example matches by OS
+## Role Layout
 
-| OS / lab host | Event | Verified Graylog search | Example fields from Graylog |
-|---|---|---|---|
-| Ubuntu 24.04 / `test-hermes1` | login/logout | `source:test-hermes1 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Ubuntu 24.04 / `test-hermes1` | sudo | `source:test-hermes1 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Ubuntu 24.04 / `test-hermes1` | su | `source:test-hermes1 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Ubuntu 24.04 / `test-hermes1` | package add | `source:test-hermes1 AND journal_forwarder:true AND package_action:install AND package_name:nano*` | `audit_type=EXECVE`, `package_action=install`, `package_name=nano`, `process_comm=apt-get` |
-| Ubuntu 24.04 / `test-hermes1` | package remove | `source:test-hermes1 AND journal_forwarder:true AND package_action:remove AND package_name:nano*` | `audit_type=EXECVE`, `package_action=remove`, `package_name=nano:amd64`, `process_comm=dpkg` |
-| Ubuntu 24.04 / `test-hermes1` | package update | `source:test-hermes1 AND journal_forwarder:true AND package_action:upgrade AND package_name:nano*` | `audit_type=EXECVE`, `package_action=upgrade`, `package_name=nano`, `process_comm=apt-get` |
-| Ubuntu 26.04 / `test-hermes2` | login/logout | `source:test-hermes2 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Ubuntu 26.04 / `test-hermes2` | sudo | `source:test-hermes2 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Ubuntu 26.04 / `test-hermes2` | su | `source:test-hermes2 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Ubuntu 26.04 / `test-hermes2` | package add | `source:test-hermes2 AND journal_forwarder:true AND package_action:install AND package_name:nano*` | `audit_type=EXECVE`, `package_action=install`, `package_name=nano`, `process_comm=apt-get` |
-| Ubuntu 26.04 / `test-hermes2` | package remove | `source:test-hermes2 AND journal_forwarder:true AND package_action:remove AND package_name:nano*` | `audit_type=EXECVE`, `package_action=remove`, `package_name=nano:amd64`, `process_comm=dpkg` |
-| Ubuntu 26.04 / `test-hermes2` | package update | `source:test-hermes2 AND journal_forwarder:true AND package_action:upgrade AND package_name:nano*` | `audit_type=EXECVE`, `package_action=upgrade`, `package_name=nano`, `process_comm=apt-get` |
-| Rocky 8.10 / `test-hermes3` | login/logout | `source:test-hermes3 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Rocky 8.10 / `test-hermes3` | sudo | `source:test-hermes3 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Rocky 8.10 / `test-hermes3` | su | `source:test-hermes3 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Rocky 8.10 / `test-hermes3` | package add | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 8.10 / `test-hermes3` | package remove | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 8.10 / `test-hermes3` | package update | `source:test-hermes3 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-2.9.8-3.el8_10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.7 / `test-hermes4` | login/logout | `source:test-hermes4 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Rocky 9.7 / `test-hermes4` | sudo | `source:test-hermes4 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Rocky 9.7 / `test-hermes4` | su | `source:test-hermes4 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Rocky 9.7 / `test-hermes4` | package add | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.7 / `test-hermes4` | package remove | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 9.7 / `test-hermes4` | package update | `source:test-hermes4 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-5.6.1-7.el9.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.1 / `test-hermes5` | login/logout | `source:test-hermes5 AND journal_forwarder:true AND auth_service:sshd AND auth_user:root AND _exists_:auth_session_state` | `auth_service=sshd`, `auth_session_state=closed`, `auth_user=root` |
-| Rocky 10.1 / `test-hermes5` | sudo | `source:test-hermes5 AND journal_forwarder:true AND _exists_:sudo_command AND auth_actor:jfverify` | `auth_actor=jfverify`, `auth_user=root`, `sudo_command=/usr/bin/id` |
-| Rocky 10.1 / `test-hermes5` | su | `source:test-hermes5 AND journal_forwarder:true AND auth_service:su* AND auth_user:jfverify AND _exists_:auth_session_state` | `auth_service=su-l`, `auth_session_state=closed`, `auth_user=jfverify` |
-| Rocky 10.1 / `test-hermes5` | package add | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:install AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=install`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.1 / `test-hermes5` | package remove | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:remove AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=remove`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
-| Rocky 10.1 / `test-hermes5` | package update | `source:test-hermes5 AND journal_forwarder:true AND audit_type:SOFTWARE_UPDATE AND package_action:update AND package_name:nano*` | `audit_type=SOFTWARE_UPDATE`, `package_action=update`, `package_name=nano-8.1-3.el10.x86_64`, `package_type=rpm`, `process_comm=dnf`, `result=success` |
+The role follows the Bitbull OS-dispatcher layout:
 
-## Example Playbook
-
-```yaml
-- hosts: all
-  become: true
-  vars:
-    graylog_gelf_host: "graylog.example.com"
-    graylog_gelf_port: 12201
-    graylog_gelf_mode: tcp
-  roles:
-    - joe-speedboat.journal_forwarder
-```
-
-## Graylog Input
-
-Create a GELF TCP input in Graylog listening on the configured port. For the default port on a firewalld-managed Graylog host:
-
-```bash
-firewall-cmd --add-port 12201/tcp --permanent
-systemctl restart firewalld
-```
-
-## Installation
-
-### From Galaxy
-
-```bash
-ansible-galaxy install joe-speedboat.journal_forwarder
-```
-
-### From Git
-
-```bash
-git clone https://github.com/joe-speedboat/ansible.journal_forwarder /etc/ansible/roles/joe-speedboat.journal_forwarder
+```text
+tasks/
+  Ubuntu/      # Debian/Ubuntu Fluent Bit install/config/uninstall
+  rhelAll/     # Rocky/Alma/RHEL 9+ native module tasks
+  rhelAll-8/   # RHEL 8 command-module package fallback
+  main.yml
+  include-file.yml
+  uninstall.yml
+templates/
+  fluent-bit.conf.j2
+  parsers-journal-forwarder.conf.j2
+  audit-package.rules.j2
 ```
 
 ## License
 
 GPLv3
-Copyright (c) Chris Ruettimann <chris@bitbull.ch>
