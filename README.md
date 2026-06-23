@@ -113,11 +113,11 @@ The role adds `journal_forwarder=true` to all records and sets `log_type` per so
 Useful search examples:
 
 ```text
-journal_forwarder: true AND log_type:journald
-journal_forwarder: true AND log_type:auditd
-journal_forwarder: true AND log_type:security_file
+journal_forwarder: true AND log_type: journald
+journal_forwarder: true AND log_type: auditd
+journal_forwarder: true AND log_type: security_file
 journal_forwarder: true AND _exists_: package_action
-journal_forwarder: true AND _exists_:sudo_command
+journal_forwarder: true AND _exists_: sudo_command
 ```
 
 ## Role Layout
