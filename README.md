@@ -88,6 +88,7 @@ Create a GELF TCP input before deploying this role. Default port:
 | `journal_forwarder_audit_remove` | `true` | Remove audit packages during uninstall |
 | `journal_forwarder_audit_tag` | `audit` | Tag for audit input |
 | `journal_forwarder_audit_rules_file` | `/etc/audit/rules.d/journal-forwarder-package.rules` | Audit rules destination |
+| `journal_forwarder_legacy_audit_rules_files` | `package.rules`, `logbeat-package.rules` | Role-owned legacy audit rule files removed during install/uninstall |
 | `journal_forwarder_security_files_enabled` | `true` | Forward auth.log/secure/web log files |
 | `journal_forwarder_security_log_paths` | auth.log, secure, nginx, apache/httpd | Tail file paths |
 | `journal_forwarder_remove_repo` | `true` | Remove Fluent Bit repository during uninstall |

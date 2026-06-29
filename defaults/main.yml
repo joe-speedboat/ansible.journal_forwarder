@@ -21,6 +21,9 @@ journal_forwarder_audit_remove: true  # remove audit packages on uninstall
 journal_forwarder_audit_tag: audit
 journal_forwarder_audit_db: "{{ journal_forwarder_storage_path }}/flb_audit.db"
 journal_forwarder_audit_rules_file: /etc/audit/rules.d/journal-forwarder-package.rules
+journal_forwarder_legacy_audit_rules_files:
+  - /etc/audit/rules.d/package.rules
+  - /etc/audit/rules.d/logbeat-package.rules
 
 # Additional Linux security/application log files
 journal_forwarder_security_files_enabled: true

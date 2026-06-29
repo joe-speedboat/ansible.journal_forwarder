@@ -28,10 +28,11 @@
     - journal_forwarder_audit_enabled | bool
     - journal_forwarder_audit_remove | bool
 
-- name: Remove audit rules
+- name: Remove journal_forwarder audit rules
   ansible.builtin.file:
-    path: "{{ journal_forwarder_audit_rules_file }}"
+    path: "{{ item }}"
     state: absent
+  loop: "{{ [journal_forwarder_audit_rules_file] + journal_forwarder_legacy_audit_rules_files }}"
   ignore_errors: true
   notify: reload audit rules
 
