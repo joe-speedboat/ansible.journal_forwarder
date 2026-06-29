@@ -52,10 +52,11 @@
   notify: restart fluent-bit
   when: journal_forwarder_install | bool
 
-- name: Remove legacy journal_forwarder audit package rules file
+- name: Remove legacy journal_forwarder audit package rules files
   ansible.builtin.file:
-    path: /etc/audit/rules.d/package.rules
+    path: "{{ item }}"
     state: absent
+  loop: "{{ journal_forwarder_legacy_audit_rules_files }}"
   notify: reload audit rules
   when:
     - journal_forwarder_install | bool
